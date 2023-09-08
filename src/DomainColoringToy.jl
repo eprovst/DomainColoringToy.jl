@@ -12,7 +12,8 @@
 
 module DomainColoringToy
 
-using GLMakie
+using Reexport
+@reexport using GLMakie
 import DomainColoring as DC
 
 export domaincolor, checkerplot, sawplot, pdphaseplot, tphaseplot
@@ -116,6 +117,44 @@ function interactiveshadedplot(
     return plt
 end
 
+
+"""
+    DomainColoringToy.@interactiveshadedplot(
+        basename,
+        shaderkwargs,
+        shader
+    )
+
+Macro emitting an implementation of **`fname`** in a similar fashion to
+the other plotting routines in this library, see for instance
+[`domaincolor`](@ref).
+
+**`shaderkwargs`** is a named tuple setting keyword arguments used in
+the expression **`shader`**. The result of **`shader`** should be a
+function `Complex -> Color` and is used to shade the resulting plot.
+
+See the source for examples.
+"""
+macro interactiveshadedplot(fname, shaderkwargs, shader)
+    # interpret shaderkwargs as keyword arguments
+    skwargs = [Expr(:kw, p...) for
+               p in pairs(__module__.eval(shaderkwargs))]
+
+    @eval __module__ begin
+        function $fname(
+                f :: Function,
+                limits = (-1, 1, -1, 1);
+                pixels = (480, 480),
+                $(skwargs...),
+                kwargs...
+            )
+
+            DomainColoringToy.interactiveshadedplot(
+                f, $shader, limits, pixels; kwargs...)
+        end
+    end
+end
+
 """
     domaincolor(
         f :: "Complex -> Complex",
@@ -176,27 +215,22 @@ to ``\\frac{2\\pi}{3}``, cyan to ``\\pi``, blue to
 
 Remaining keyword arguments are passed to Makie.
 """
-function domaincolor(
-        f,
-        limits = (-1, 1, -1, 1);
-        pixels = (480, 480),
-        abs = false,
-        grid = false,
-        color = true,
-        all = false,
-        box = nothing,
-        kwargs...
-    )
+domaincolor
 
-    # issue warning if everything is inactive
-    if Base.all(b -> b isa Bool && !b, (abs, grid, color, all))
-        @warn "angle, abs, and grid are all false, domain coloring will be a constant color."
-    end
-
-    interactiveshadedplot(
-        f, w -> DC.domaincolorshader(w; abs, grid, color, all, box),
-        limits, pixels; kwargs...)
-end
+@interactiveshadedplot(
+    domaincolor,
+    (abs = false,
+     grid = false,
+     color = true,
+     all = false,
+     box = nothing),
+    begin
+        # issue warning if everything is inactive
+        if Base.all(b -> b isa Bool && !b, (abs, grid, color, all))
+            @warn "angle, abs, and grid are all false, domain coloring will be a constant color."
+        end
+        w -> DC.domaincolorshader(w; abs, grid, color, all, box)
+    end)
 
 """
     pdphaseplot(
@@ -235,17 +269,11 @@ to ``\\pi``, and black to ``\\frac{3\\pi}{2}``.
 
 Remaining keyword arguments are passed to Makie.
 """
-function pdphaseplot(
-        f,
-        limits = (-1, 1, -1, 1);
-        pixels = (480, 480),
-        box = nothing,
-        kwargs...
-    )
+pdphaseplot
 
-    interactiveshadedplot(f, w -> DC.pdphaseplotshader(w; box),
-                          limits, pixels; kwargs...)
-end
+@interactiveshadedplot(pdphaseplot,
+    (box = nothing,),
+    w -> DC.pdphaseplotshader(w; box))
 
 """
     tphaseplot(
@@ -284,17 +312,11 @@ Red corresponds to phase ``0``, white to ``\\frac{\\pi}{2}``, cyan to
 
 Remaining keyword arguments are passed to Makie.
 """
-function tphaseplot(
-        f,
-        limits = (-1, 1, -1, 1);
-        pixels = (480, 480),
-        box = nothing,
-        kwargs...
-    )
+tphaseplot
 
-    interactiveshadedplot(f, w -> DC.tphaseplotshader(w; box),
-                          limits, pixels; kwargs...)
-end
+@interactiveshadedplot(tphaseplot,
+    (box = nothing,),
+    w -> DC.tphaseplotshader(w; box))
 
 """
     checkerplot(
@@ -357,25 +379,20 @@ Numbers can be provided instead of booleans to override the default rates.
 
 Remaining keyword arguments are passed to Makie.
 """
-function checkerplot(
-        f,
-        limits = (-1, 1, -1, 1);
-        pixels = (480, 480),
-        real = false,
-        imag = false,
-        rect = false,
-        angle = false,
-        abs = false,
-        polar = false,
-        box = nothing,
-        hicontrast = false,
-        kwargs...
-    )
+checkerplot
 
-    interactiveshadedplot(f, w -> DC.checkerplotshader(
-            w; real, imag, rect, angle, abs, polar, box, hicontrast
-        ), limits, pixels; kwargs...)
-end
+@interactiveshadedplot(checkerplot,
+    (real = false,
+     imag = false,
+     rect = false,
+     angle = false,
+     abs = false,
+     polar = false,
+     box = nothing,
+     hicontrast = false),
+    w -> DC.checkerplotshader(
+        w; real, imag, rect, angle, abs, polar, box, hicontrast
+    ))
 
 """
     sawplot(
@@ -438,24 +455,19 @@ Numbers can be provided instead of booleans to override the default rates.
 
 Remaining keyword arguments are passed to Makie.
 """
-function sawplot(
-        f,
-        limits = (-1, 1, -1, 1);
-        pixels = (480, 480),
-        real = false,
-        imag = false,
-        rect = false,
-        angle = false,
-        abs = false,
-        polar = false,
-        color = false,
-        box = nothing,
-        kwargs...
-    )
+sawplot
 
-    interactiveshadedplot(f, w -> DC.sawplotshader(
-            w; real, imag, rect, angle, abs, polar, color, box
-        ), limits, pixels; kwargs...)
-end
+@interactiveshadedplot(sawplot,
+    (real = false,
+     imag = false,
+     rect = false,
+     angle = false,
+     abs = false,
+     polar = false,
+     color = false,
+     box = nothing),
+    w -> DC.sawplotshader(
+        w; real, imag, rect, angle, abs, polar, color, box
+    ))
 
 end
