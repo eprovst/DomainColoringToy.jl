@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DomainColoringToy = "7cf40ad8-af6a-4ede-b3c6-2a9df3bce851"
+
+[sources]
+DomainColoringToy = {path = ".."}
